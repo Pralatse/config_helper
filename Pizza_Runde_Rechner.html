@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizza-Rechner für Fußballtipper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Check for dark mode -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="container mx-auto px-4 py-8 max-w-lg">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">Pizza-Rechner</h1>
+            <p class="text-gray-600 dark:text-gray-300">Für die Fußball-Tippgemeinschaft</p>
+        </header>
+
+        <main class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div class="mb-6">
+                <label for="billAmount" class="block text-gray-700 dark:text-gray-200 mb-2 font-medium">
+                    Rechnungsbetrag (€)
+                </label>
+                <div class="relative">
+                    <input 
+                        type="number" 
+                        id="billAmount" 
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white text-base" 
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                    >
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <div class="flex items-center mb-2">
+                    <input type="checkbox" id="tiesCheckbox" class="mr-2 h-5 w-5 text-primary">
+                    <label for="tiesCheckbox" class="text-gray-700 dark:text-gray-200 font-medium">
+                        Punktegleichstand berücksichtigen
+                    </label>
+                </div>
+                
+                <div id="tiesSection" class="mt-4 hidden border rounded-lg p-4 dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                        Bei Punktegleichstand werden die Kosten gleichmäßig aufgeteilt.
+                    </p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="place3" class="block text-gray-700 dark:text-gray-200 text-sm mb-1">
+                                Anzahl Platz 3
+                            </label>
+                            <input 
+                                type="number" 
+                                id="place3" 
+                                class="w-full px-3 py-1 border rounded focus:ring-1 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white text-base" 
+                                value="1"
+                                min="0"
+                                max="4"
+                            >
+                        </div>
+                        <div>
+                            <label for="place4" class="block text-gray-700 dark:text-gray-200 text-sm mb-1">
+                                Anzahl Platz 4
+                            </label>
+                            <input 
+                                type="number" 
+                                id="place4" 
+                                class="w-full px-3 py-1 border rounded focus:ring-1 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white text-base" 
+                                value="1"
+                                min="0"
+                                max="4"
+                            >
+                        </div>
+                        <div>
+                            <label for="place5" class="block text-gray-700 dark:text-gray-200 text-sm mb-1">
+                                Anzahl Platz 5
+                            </label>
+                            <input 
+                                type="number" 
+                                id="place5" 
+                                class="w-full px-3 py-1 border rounded focus:ring-1 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white text-base" 
+                                value="1"
+                                min="0"
+                                max="4"
+                            >
+                        </div>
+                        <div>
+                            <label for="place6" class="block text-gray-700 dark:text-gray-200 text-sm mb-1">
+                                Anzahl Platz 6
+                            </label>
+                            <input 
+                                type="number" 
+                                id="place6" 
+                                class="w-full px-3 py-1 border rounded focus:ring-1 focus:ring-primary focus:border-primary dark:bg-gray-800 dark:border-gray-600 dark:text-white text-base" 
+                                value="1"
+                                min="0"
+                                max="4"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button 
+                id="calculateButton"
+                class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors mb-6"
+            >
+                Berechnen
+            </button>
+
+            <div id="resultSection" class="hidden mt-6 p-4 border rounded-lg dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-3">Ergebnis</h2>
+                <div id="resultsContainer" class="space-y-2">
+                    <!-- Results will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- Saved Calculations Section -->
+            <div class="mt-8">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-white">
+                        Gespeicherte Berechnungen
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button 
+                            id="saveButton" 
+                            class="text-sm bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1 rounded transition-colors dark:bg-primary/20"
+                            disabled
+                        >
+                            Speichern
+                        </button>
+                        <button 
+                            id="exportButton" 
+                            class="text-sm bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 px-3 py-1 rounded transition-colors"
+                            disabled
+                        >
+                            Exportieren
+                        </button>
+                        <button 
+                            id="importButton" 
+                            class="text-sm bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 px-3 py-1 rounded transition-colors"
+                        >
+                            Importieren
+                        </button>
+                    </div>
+                </div>
+                <div id="noSavedRecords" class="text-gray-500 dark:text-gray-400 text-sm italic">
+                    Keine gespeicherten Berechnungen vorhanden.
+                </div>
+                <div id="savedCalculationsContainer" class="mt-2 space-y-2">
+                    <!-- Saved calculations will be displayed here -->
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Hinweis: Gespeicherte Berechnungen bleiben nur während der aktuellen Sitzung erhalten, 
+                    können aber mit dem "Exportieren"-Button dauerhaft gespeichert werden.
+                </p>
+            </div>
+            
+            <!-- Import/Export Dialog -->
+            <div id="fileDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-50">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+                    <h3 id="dialogTitle" class="text-xl font-bold text-gray-800 dark:text-white mb-4">Daten exportieren</h3>
+                    
+                    <div id="exportContent" class="hidden">
+                        <p class="text-gray-600 dark:text-gray-300 mb-3">
+                            Speichern Sie Ihre Berechnungen in einer Datei:
+                        </p>
+                        <a 
+                            id="downloadLink" 
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex justify-center items-center mb-4"
+                            href="#" 
+                            target="_blank"
+                        >
+                            Berechnungen herunterladen
+                        </a>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Nach dem Klick erscheint ein neues Fenster. Wählen Sie dort "Speichern unter" aus dem Menü, um die Datei zu speichern.
+                        </p>
+                    </div>
+                    
+                    <div id="importContent" class="hidden">
+                        <p class="text-gray-600 dark:text-gray-300 mb-3">
+                            Wählen Sie eine zuvor exportierte Datei aus:
+                        </p>
+                        <div class="mb-4">
+                            <input 
+                                type="file" 
+                                id="fileInput" 
+                                accept=".json"
+                                class="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none py-2 px-3"
+                            >
+                        </div>
+                        <button 
+                            id="processImportButton" 
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mb-4"
+                            disabled
+                        >
+                            Datei importieren
+                        </button>
+                        <p id="importStatus" class="text-sm text-gray-500 dark:text-gray-400 italic hidden">
+                            Importieren...
+                        </p>
+                    </div>
+                    
+                    <div class="flex justify-end mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button 
+                            id="closeDialogButton" 
+                            class="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
+                        >
+                            Schließen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="mt-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+            <p>&copy; 2025 Capuccino-Rechner | Erstellt mit ❤️ für Fußball-Pizzarunde</p>
+        </footer>
+    </div>
+
+    <script>
+        // Elements
+        const billAmountInput = document.getElementById('billAmount');
+        const tiesCheckbox = document.getElementById('tiesCheckbox');
+        const tiesSection = document.getElementById('tiesSection');
+        const place3Input = document.getElementById('place3');
+        const place4Input = document.getElementById('place4');
+        const place5Input = document.getElementById('place5');
+        const place6Input = document.getElementById('place6');
+        const calculateButton = document.getElementById('calculateButton');
+        const resultSection = document.getElementById('resultSection');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const saveButton = document.getElementById('saveButton');
+        const savedCalculationsContainer = document.getElementById('savedCalculationsContainer');
+        const noSavedRecords = document.getElementById('noSavedRecords');
+
+        // In-memory storage for calculations
+        let savedCalculations = [];
+
+        // Show/hide ties section
+        tiesCheckbox.addEventListener('change', () => {
+            tiesSection.classList.toggle('hidden', !tiesCheckbox.checked);
+        });
+
+        // Calculate button click handler
+        calculateButton.addEventListener('click', () => {
+            const billAmount = parseFloat(billAmountInput.value);
+            
+            if (isNaN(billAmount) || billAmount <= 0) {
+                alert('Bitte geben Sie einen gültigen Rechnungsbetrag ein.');
+                return;
+            }
+
+            // Get calculation results
+            const results = calculateShares(billAmount);
+            
+            // Display results
+            displayResults(results);
+            
+            // Enable save button
+            saveButton.disabled = false;
+        });
+
+        // Calculate payment shares
+        function calculateShares(billAmount) {
+            const useTiesLogic = tiesCheckbox.checked;
+            let results = [];
+            
+            if (useTiesLogic) {
+                const counts = {
+                    3: parseInt(place3Input.value) || 0,
+                    4: parseInt(place4Input.value) || 0,
+                    5: parseInt(place5Input.value) || 0,
+                    6: parseInt(place6Input.value) || 0
+                };
+                
+                // Check total count
+                const totalCount = counts[3] + counts[4] + counts[5] + counts[6];
+                if (totalCount !== 4) {
+                    alert(`Die Gesamtanzahl der Plätze 3-6 muss 4 sein. Aktuell: ${totalCount}`);
+                    return [];
+                }
+                
+                // Standard percentages per place
+                const percentages = {
+                    3: 10,
+                    4: 20,
+                    5: 30,
+                    6: 40
+                };
+                
+                // Calculate distributed percentages when there are ties
+                const distributedPercentages = {};
+                for (let place = 3; place <= 6; place++) {
+                    if (counts[place] > 0) {
+                        // Calculate weighted percentage for this place
+                        let totalPercent = 0;
+                        let positions = 0;
+                        
+                        // Create a range of positions this place spans
+                        for (let i = 0; i < counts[place]; i++) {
+                            const effectivePlace = place + i;
+                            if (effectivePlace <= 6) {
+                                totalPercent += percentages[effectivePlace];
+                                positions++;
+                            }
+                        }
+                        
+                        // Store the average percentage for this place
+                        distributedPercentages[place] = totalPercent / positions;
+                    }
+                }
+                
+                // Generate results
+                for (let place = 3; place <= 6; place++) {
+                    if (counts[place] > 0) {
+                        const percentage = distributedPercentages[place];
+                        const amountPerPerson = (billAmount * (percentage / 100)) / counts[place];
+                        
+                        results.push({
+                            place,
+                            count: counts[place],
+                            percentage,
+                            amountPerPerson,
+                            totalAmount: amountPerPerson * counts[place]
+                        });
+                    }
+                }
+            } else {
+                // Standard calculation without ties
+                const percentages = [10, 20, 30, 40]; // Percentages for places 3, 4, 5, 6
+                
+                for (let i = 0; i < 4; i++) {
+                    const place = i + 3;
+                    const percentage = percentages[i];
+                    const amount = billAmount * (percentage / 100);
+                    
+                    results.push({
+                        place,
+                        count: 1,
+                        percentage,
+                        amountPerPerson: amount,
+                        totalAmount: amount
+                    });
+                }
+            }
+            
+            return results;
+        }
+
+        // Display calculation results
+        function displayResults(results) {
+            if (results.length === 0) return;
+            
+            resultSection.classList.remove('hidden');
+            resultsContainer.innerHTML = '';
+            
+            let totalCalculatedAmount = 0;
+            const billAmount = parseFloat(billAmountInput.value);
+            
+            // Create result items
+            results.forEach(result => {
+                totalCalculatedAmount += result.totalAmount;
+                
+                const resultItem = document.createElement('div');
+                resultItem.className = 'flex justify-between py-1 border-b dark:border-gray-600 last:border-0';
+                
+                let placeText = `Platz ${result.place}`;
+                if (result.count > 1) {
+                    placeText += ` (${result.count}x)`;
+                }
+                
+                resultItem.innerHTML = `
+                    <div>
+                        <span class="font-medium text-gray-700 dark:text-gray-200">${placeText}</span>
+                        <span class="text-gray-500 dark:text-gray-400 text-sm ml-2">${result.percentage.toFixed(1)}%</span>
+                    </div>
+                    <div class="font-medium text-gray-800 dark:text-white">
+                        ${result.amountPerPerson.toFixed(2)} €
+                    </div>
+                `;
+                
+                resultsContainer.appendChild(resultItem);
+            });
+            
+            // Add total
+            const totalItem = document.createElement('div');
+            totalItem.className = 'flex justify-between pt-2 font-semibold text-gray-800 dark:text-white';
+            totalItem.innerHTML = `
+                <div>Gesamt:</div>
+                <div>${totalCalculatedAmount.toFixed(2)} €</div>
+            `;
+            resultsContainer.appendChild(totalItem);
+            
+            // Check for rounding errors
+            const roundingDifference = billAmount - totalCalculatedAmount;
+            if (Math.abs(roundingDifference) > 0.01) {
+                const noteItem = document.createElement('div');
+                noteItem.className = 'text-xs text-gray-500 dark:text-gray-400 mt-2';
+                noteItem.innerHTML = `
+                    Hinweis: Es gibt eine Rundungsdifferenz von ${roundingDifference.toFixed(2)} €.
+                    Diese könnte auf Platz 3 aufgeschlagen werden.
+                `;
+                resultsContainer.appendChild(noteItem);
+            }
+        }
+
+        // Save calculation
+        saveButton.addEventListener('click', () => {
+            const billAmount = parseFloat(billAmountInput.value);
+            if (isNaN(billAmount) || billAmount <= 0) return;
+            
+            const useTiesLogic = tiesCheckbox.checked;
+            const counts = useTiesLogic ? {
+                3: parseInt(place3Input.value) || 0,
+                4: parseInt(place4Input.value) || 0,
+                5: parseInt(place5Input.value) || 0,
+                6: parseInt(place6Input.value) || 0
+            } : null;
+            
+            const results = calculateShares(billAmount);
+            const timestamp = new Date().toLocaleString('de-DE');
+            
+            // Create calculation record
+            const calculation = {
+                id: Date.now(),
+                timestamp,
+                billAmount,
+                useTiesLogic,
+                counts,
+                results
+            };
+            
+            // Save calculation
+            savedCalculations.push(calculation);
+            
+            // Update saved calculations display
+            updateSavedCalculations();
+            
+            // Disable save button after saving
+            saveButton.disabled = true;
+        });
+
+        // Update saved calculations display
+        function updateSavedCalculations() {
+            if (savedCalculations.length === 0) {
+                noSavedRecords.classList.remove('hidden');
+                savedCalculationsContainer.innerHTML = '';
+                return;
+            }
+            
+            noSavedRecords.classList.add('hidden');
+            savedCalculationsContainer.innerHTML = '';
+            
+            // Sort calculations by timestamp (newest first)
+            savedCalculations.sort((a, b) => b.id - a.id);
+            
+            // Create calculation items
+            savedCalculations.forEach(calculation => {
+                const calcItem = document.createElement('div');
+                calcItem.className = 'bg-white dark:bg-gray-800 p-3 rounded border dark:border-gray-700 text-sm';
+                calcItem.setAttribute('data-id', calculation.id);
+                
+                let details = `<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">${calculation.timestamp}</p>`;
+                details += `<p class="font-medium text-gray-800 dark:text-white mb-2">Betrag: ${calculation.billAmount.toFixed(2)} €</p>`;
+                
+                details += '<div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">';
+                calculation.results.forEach(result => {
+                    let placeText = `Platz ${result.place}`;
+                    if (result.count > 1) {
+                        placeText += ` (${result.count}x)`;
+                    }
+                    
+                    details += `
+                        <div class="text-gray-600 dark:text-gray-300">${placeText}:</div>
+                        <div class="text-gray-800 dark:text-white font-medium">${result.amountPerPerson.toFixed(2)} €</div>
+                    `;
+                });
+                details += '</div>';
+                
+                // Add buttons
+                details += `
+                    <div class="flex justify-end mt-2 pt-1 border-t dark:border-gray-700">
+                        <button class="load-btn text-xs px-2 py-1 text-primary hover:bg-primary/10 rounded mr-2 transition-colors">
+                            Laden
+                        </button>
+                        <button class="delete-btn text-xs px-2 py-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors">
+                            Löschen
+                        </button>
+                    </div>
+                `;
+                
+                calcItem.innerHTML = details;
+                
+                // Add event listeners for buttons
+                calcItem.querySelector('.load-btn').addEventListener('click', () => {
+                    loadCalculation(calculation);
+                });
+                
+                calcItem.querySelector('.delete-btn').addEventListener('click', () => {
+                    deleteCalculation(calculation.id);
+                });
+                
+                savedCalculationsContainer.appendChild(calcItem);
+            });
+        }
+
+        // Load saved calculation
+        function loadCalculation(calculation) {
+            billAmountInput.value = calculation.billAmount;
+            
+            tiesCheckbox.checked = calculation.useTiesLogic;
+            tiesSection.classList.toggle('hidden', !calculation.useTiesLogic);
+            
+            if (calculation.useTiesLogic && calculation.counts) {
+                place3Input.value = calculation.counts[3];
+                place4Input.value = calculation.counts[4];
+                place5Input.value = calculation.counts[5];
+                place6Input.value = calculation.counts[6];
+            }
+            
+            // Display results
+            displayResults(calculation.results);
+            
+            // Disable save button since this calculation is already saved
+            saveButton.disabled = true;
+        }
+
+        // Delete saved calculation
+        function deleteCalculation(id) {
+            savedCalculations = savedCalculations.filter(calc => calc.id !== id);
+            updateSavedCalculations();
+        }
+
+        // Input change listeners to enable save button
+        const inputs = [billAmountInput, place3Input, place4Input, place5Input, place6Input];
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                saveButton.disabled = false;
+            });
+        });
+        
+        tiesCheckbox.addEventListener('change', () => {
+            saveButton.disabled = false;
+        });
+
+        // Initialize with standard values for ties
+        place3Input.value = 1;
+        place4Input.value = 1;
+        place5Input.value = 1;
+        place6Input.value = 1;
+
+        // Export/Import functionality
+        const exportButton = document.getElementById('exportButton');
+        const importButton = document.getElementById('importButton');
+        const fileDialog = document.getElementById('fileDialog');
+        const dialogTitle = document.getElementById('dialogTitle');
+        const exportContent = document.getElementById('exportContent');
+        const importContent = document.getElementById('importContent');
+        const closeDialogButton = document.getElementById('closeDialogButton');
+        const downloadLink = document.getElementById('downloadLink');
+        const fileInput = document.getElementById('fileInput');
+        const processImportButton = document.getElementById('processImportButton');
+        const importStatus = document.getElementById('importStatus');
+
+        // Update export button state
+        function updateExportButtonState() {
+            exportButton.disabled = savedCalculations.length === 0;
+        }
+
+        // Open dialog for export
+        exportButton.addEventListener('click', () => {
+            if (savedCalculations.length === 0) return;
+            
+            // Prepare dialog for export
+            dialogTitle.textContent = 'Berechnungen exportieren';
+            exportContent.classList.remove('hidden');
+            importContent.classList.add('hidden');
+            
+            // Create Blob with JSON data
+            const dataToExport = JSON.stringify(savedCalculations, null, 2);
+            const blob = new Blob([dataToExport], { type: 'application/json' });
+            
+            // Create download URL
+            const url = URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.download = `pizza-rechner-export-${new Date().toISOString().slice(0, 10)}.json`;
+            
+            // Show dialog
+            fileDialog.classList.remove('hidden');
+        });
+
+        // Open dialog for import
+        importButton.addEventListener('click', () => {
+            // Prepare dialog for import
+            dialogTitle.textContent = 'Berechnungen importieren';
+            importContent.classList.remove('hidden');
+            exportContent.classList.add('hidden');
+            
+            // Reset import form
+            fileInput.value = '';
+            processImportButton.disabled = true;
+            importStatus.classList.add('hidden');
+            
+            // Show dialog
+            fileDialog.classList.remove('hidden');
+        });
+
+        // Close dialog
+        closeDialogButton.addEventListener('click', () => {
+            fileDialog.classList.add('hidden');
+            
+            // Clean up potentially large objects
+            URL.revokeObjectURL(downloadLink.href);
+        });
+
+        // Handle file selection for import
+        fileInput.addEventListener('change', () => {
+            processImportButton.disabled = !fileInput.files.length;
+        });
+
+        // Process imported file
+        processImportButton.addEventListener('click', async () => {
+            if (!fileInput.files.length) return;
+            
+            try {
+                importStatus.textContent = 'Importieren...';
+                importStatus.classList.remove('hidden');
+                processImportButton.disabled = true;
+                
+                const file = fileInput.files[0];
+                const fileContents = await file.text();
+                const importedData = JSON.parse(fileContents);
+                
+                // Basic validation - check if it's an array
+                if (!Array.isArray(importedData)) {
+                    throw new Error('Ungültiges Dateiformat. Importierte Daten sind kein Array.');
+                }
+                
+                // Process each imported calculation
+                const validCalculations = [];
+                
+                for (const calc of importedData) {
+                    // Basic validation of required fields
+                    if (
+                        typeof calc.billAmount === 'number' &&
+                        typeof calc.timestamp === 'string' &&
+                        Array.isArray(calc.results)
+                    ) {
+                        // Generate a new ID to avoid collisions
+                        calc.id = Date.now() + Math.floor(Math.random() * 1000);
+                        validCalculations.push(calc);
+                    }
+                }
+                
+                // Add valid calculations to saved calculations
+                if (validCalculations.length > 0) {
+                    savedCalculations = [...savedCalculations, ...validCalculations];
+                    updateSavedCalculations();
+                    updateExportButtonState();
+                    
+                    importStatus.textContent = `${validCalculations.length} Berechnungen erfolgreich importiert.`;
+                    importStatus.classList.remove('hidden');
+                    
+                    // Close dialog after 2 seconds
+                    setTimeout(() => {
+                        fileDialog.classList.add('hidden');
+                    }, 2000);
+                } else {
+                    throw new Error('Keine gültigen Berechnungen in der importierten Datei gefunden.');
+                }
+            } catch (error) {
+                importStatus.textContent = `Fehler: ${error.message}`;
+                importStatus.classList.remove('hidden');
+                processImportButton.disabled = false;
+            }
+        });
+
+        // Update saved calculations and export button state when calculations change
+        const originalUpdateSavedCalculations = updateSavedCalculations;
+        updateSavedCalculations = function() {
+            originalUpdateSavedCalculations();
+            updateExportButtonState();
+        };
+        
+        // Initialize export button state
+        updateExportButtonState();
+    </script>
+</body>
+</html>
