@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masterportal Konfigurations-Helfer</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Dark mode styles */
+    .dark {
+      background-color: #181818;
+      color: #e0e0e0;
+    }
+    .dark .bg-white {
+      background-color: #2a2a2a;
+      color: #e0e0e0;
+    }
+    .dark .border-gray-200 {
+      border-color: #444;
+    }
+    .dark .bg-gray-50 {
+      background-color: #333;
+    }
+    .dark .hover\:bg-gray-100:hover {
+      background-color: #3a3a3a;
+    }
+    .dark .text-gray-700 {
+      color: #d0d0d0;
+    }
+    .dark .text-gray-600 {
+      color: #b0b0b0;
+    }
+    .dark .text-gray-500 {
+      color: #a0a0a0;
+    }
+    .dark pre {
+      background-color: #333;
+    }
+    .dark .border-gray-300 {
+      border-color: #444;
+    }
+    
+    /* Syntax highlighting for code examples */
+    .json-key { color: #5D5CDE; }
+    .json-string { color: #6b9955; }
+    .json-number { color: #f08d49; }
+    .json-boolean { color: #ff8c00; }
+    
+    .dark .json-key { color: #9cdcfe; }
+    .dark .json-string { color: #ce9178; }
+    .dark .json-number { color: #b5cea8; }
+    .dark .json-boolean { color: #569cd6; }
+
+    /* Tab styling */
+    .tab-active {
+      @apply bg-indigo-600 text-white;
+    }
+    .tab-inactive {
+      @apply bg-gray-200 text-indigo-800;
+    }
+    .dark .tab-inactive {
+      @apply bg-gray-700 text-indigo-200;
+    }
+    
+    /* Header styling */
+    .main-header {
+      @apply text-indigo-800;
+    }
+    .dark .main-header {
+      @apply text-indigo-300;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold text-center mb-6 main-header">Masterportal Konfigurations-Helfer</h1>
+    
+    <div class="mb-6 flex gap-3 flex-wrap">
+      <div class="tabs flex flex-wrap gap-3">
+        <button id="show-config-json" class="py-2 px-6 rounded-md font-medium shadow-sm tab-inactive">config.json</button>
+        <button id="show-config-js" class="py-2 px-6 rounded-md font-medium shadow-sm tab-inactive">config.js</button>
+        <button id="show-services-json" class="py-2 px-6 rounded-md font-medium shadow-sm tab-inactive">services.json</button>
+        <button id="show-rest-services-json" class="py-2 px-6 rounded-md font-medium shadow-sm tab-inactive">rest-services.json</button>
+        <button id="show-style-json" class="py-2 px-6 rounded-md font-medium shadow-sm tab-inactive">style.json</button>
+      </div>
+      <div class="grow"></div>
+      <input id="search-input" type="text" placeholder="Konfiguration durchsuchen..." class="px-3 py-2 border border-gray-300 rounded-md">
+    </div>
+    
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- Config tree panel -->
+      <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-xl font-semibold mb-4" id="config-type-header">config.json Struktur</h2>
+        <div id="config-tree" class="overflow-y-auto max-h-[70vh]">
+          <!-- Config tree will be generated here -->
+        </div>
+      </div>
+      
+      <!-- Help panel -->
+      <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-xl font-semibold mb-4">Konfigurations-Hilfe</h2>
+        <div id="config-help" class="overflow-y-auto max-h-[70vh]">
+          <p class="text-gray-500 text-center py-10">Klicken Sie auf ein Konfigurationselement, um die Dokumentation anzuzeigen</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Check for dark mode preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+    }
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+      if (event.matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    });
+
+    // Configuration data and documentation
+    const configDocs = {
+      // config.json documentation
+      "config.json": {
+        "portalConfig": {
+          "_description": "Der Abschnitt portalConfig steuert Eigenschaften wie Menüeinträge, Kartenkonfiguration, Fußzeile und Themenauswahl.",
+          "_example": `{
+   "portalConfig": { },
+   "layerConfig": { }
+}`,
+          "mainMenu": {
+            "_description": "Hier werden Menüeinträge im Hauptmenü sowie die Verfügbarkeit und Reihenfolge von Modulen konfiguriert.",
+            "_required": false,
+            "_type": "Menü-Objekt",
+            "_properties": [
+              { "name": "currentComponent", "type": "String", "required": false, "default": '""', "description": "Legt ein Modul fest, das beim Start geöffnet wird." },
+              { "name": "expanded", "type": "Boolean", "required": false, "default": "false", "description": "Legt fest, ob das Menü beim Start des Portals ausgeklappt oder eingeklappt ist." },
+              { "name": "width", "type": "String", "required": false, "default": '"25%"', "description": "Legt die anfängliche Breite des Menüs als Prozentwert fest." },
+              { "name": "showDescription", "type": "Boolean", "required": false, "description": "Legt fest, ob eine Beschreibung der Module im Menü angezeigt werden soll." },
+              { "name": "searchBar", "type": "object", "required": false, "description": "Die Suchleiste ermöglicht das Abfragen von Informationen aus verschiedenen Suchdiensten gleichzeitig." },
+              { "name": "sections", "type": "array", "required": false, "description": "Unterteilung der Module im Menü." },
+              { "name": "title", "type": "object", "required": false, "description": "Der Titel und das Logo des Portals, die in der Menüleiste angezeigt werden." }
+            ],
+            "_example": `"mainMenu": {
+  "expanded": true,
+  "title": {
+    "text": "Master",
+    "logo": "https://geodienste.hamburg.de/lgv-config/img/hh-logo.png",
+    "link": "https://geoinfo.hamburg.de",
+    "toolTip": "Landesbetrieb Geoinformation und Vermessung"
+  }
+}`
+          },
+          "map": {
+            "_description": "Konfiguration der Karte und der darauf platzierten Elemente",
+            "_required": false,
+            "_type": "Karten-Objekt",
+            "controls": {
+              "_description": "Ermöglicht die Einstellung, welche Interaktionen in der Karte aktiv sind",
+              "zoom": {
+                "_description": "Legt fest, ob Zoom-Buttons angezeigt werden sollen",
+                "_type": "Boolean oder Objekt",
+                "_default": "false",
+                "_example": `"zoom": true`
+              },
+              "orientation": {
+                "_description": "Die Orientierungssteuerung verwendet die Geolokalisierungsfunktion des Browsers",
+                "_type": "Objekt",
+                "_properties": [
+                  { "name": "zoomMode", "type": "enum['once', 'always']", "default": '"once"', "description": "Der zoomMode bestimmt das Geolokalisierungsverhalten: 'once' zoomt einmal zum Standort des Benutzers, 'always' zoomt bei jeder Aktivierung." }
+                ],
+                "_example": `"orientation": {
+  "zoomMode": "once"
+}`
+              }
+            },
+            "mapView": {
+              "_description": "Definiert die anfängliche Kartenansicht und einen Hintergrund, der angezeigt wird, wenn kein Layer ausgewählt ist",
+              "_type": "Objekt",
+              "_properties": [
+                { "name": "backgroundImage", "type": "String", "required": false, "description": "Pfad zu einem alternativen Hintergrundbild." },
+                { "name": "startCenter", "type": "Number[]", "required": false, "description": "Die anfängliche Koordinate des Zentrums." },
+                { "name": "extent", "type": "Number[]", "required": false, "description": "Kartenausdehnung - die Karte kann nicht außerhalb dieser Grenzen verschoben werden." },
+                { "name": "startZoomLevel", "type": "Integer", "required": false, "description": "Die anfängliche Kartenvergrößerungsstufe aus dem options-Element." }
+              ],
+              "_example": `"mapView": {
+  "backgroundImage": "./resources/img/backgroundCanvas.jpeg",
+  "startCenter": [561210, 5932600],
+  "extent": [510000.0, 5850000.0, 625000.4, 6000000.0],
+  "startZoomLevel": 1
+}`
+            }
+          },
+          "portalFooter": {
+            "_description": "Möglichkeit, den Inhalt der Portalfußzeile zu konfigurieren",
+            "_properties": [
+              { "name": "urls", "type": "object[]", "required": false, "default": "[]", "description": "URLs, die in der Fußzeile angezeigt werden sollen." },
+              { "name": "scaleLine", "type": "Boolean", "required": false, "default": "true", "description": "Legt fest, ob der Maßstab in der Fußzeile angezeigt werden soll." },
+              { "name": "seperator", "type": "String", "required": false, "default": "\" | \"", "description": "Der Trennzeichen zwischen URLs." }
+            ],
+            "_example": `"portalFooter": {
+  "urls": [
+  {
+      "bezeichnung": "common:modules.portalFooter.designation",
+      "url": "https://geoinfo.hamburg.de/",
+      "alias": "Landesbetrieb Geoinformation und Vermessung",
+      "alias_mobile": "LGV Hamburg"
+  }
+  ],
+  "scaleLine": true
+}`
+          },
+          "tree": {
+            "_description": "Konfiguration des Themenauswahlbaums",
+            "_properties": [
+              { "name": "type", "type": "enum[\"auto\"]", "required": false, "description": "Der Themenbaum wird in derselben Struktur wie die topicconfig aufgebaut. Wenn der Typ 'auto' konfiguriert ist, werden alle Layer aus services.json im Baum angeboten." },
+              { "name": "singleBaselayer", "type": "Boolean", "required": false, "default": "false", "description": "Gibt an, ob jeweils nur ein Basis-Layer aktiv sein kann." },
+              { "name": "highlightedFeatures", "type": "object", "required": false, "description": "Konfiguration zusätzlich zur Hervorhebung von Features." }
+            ],
+            "_example": `"tree": {
+  "type": "auto",
+  "validLayerTypesAutoTree": ["WMS", "WFS"],
+  "layerIDsToIgnore": ["1912", "1913"]
+}`
+          }
+        },
+        "layerConfig": {
+          "_description": "Der Eintrag layerConfig definiert die Inhalte und deren Reihenfolge in der Themenauswahl.",
+          "baselayer": {
+            "_description": "Hier definieren Sie Layer, die als Hintergrundkarten angezeigt werden sollen.",
+            "elements": {
+              "_description": "Definition der Layer, die als Hintergrundkarten im Themenbaum angezeigt werden sollen.",
+              "_example": `"elements": [
+  {
+    "id": "453",
+    "visibility": true
+  },
+  {
+    "id": "452"
+  }
+]`
+            }
+          },
+          "subjectlayer": {
+            "_description": "Hier werden Layer oder Ordner mit Layern definiert, die als Fachdaten angezeigt werden sollen.",
+            "elements": {
+              "_description": "Definition der Layer oder Ordner, die im Themenbaum als Fachdaten angezeigt werden sollen.",
+              "_example": `"elements": [
+  {
+    "id": [ "3302", "4561"], 
+    "name": "WMS-Gruppe",
+    "typ": "GROUP",
+    "visibility": true,
+    "showInLayerTree": true
+  },
+  {
+    "id": "1711",
+    "name": "WFS Krankenhäuser",
+    "styleId": "1711",
+    "mouseHoverField": "name",
+    "searchField": "name"
+  }
+]`
+            }
+          }
+        }
+      },
+      
+      // config.js documentation
+      "config.js": {
+        "_description": "Die config.js enthält Masterportal-Konfigurationen, die nicht direkt mit der Benutzeroberfläche oder Ebenen zusammenhängen.",
+        "layerConf": {
+          "_description": "Pfad zur services.json-Datei, die alle verfügbaren WMS-Layer und WFS-Featuretypen enthält. Der Pfad ist relativ zu js/main.js.",
+          "_required": true,
+          "_type": "String",
+          "_example": `layerConf: "./resources/services-internet.json"`
+        },
+        "restConf": {
+          "_description": "Pfad zur rest-services.json-Datei, die weitere Dienste beschreibt, z.B. Druckdienst, WPS, CSW. Der Pfad ist relativ zu js/main.js.",
+          "_required": true,
+          "_type": "String",
+          "_example": `restConf: "./resources/rest-services-internet.json"`
+        },
+        "styleConf": {
+          "_description": "Pfad zur style.json-Datei, die Vektorlayer (WFS) Stile beschreibt. Der Pfad ist relativ zu js/main.js.",
+          "_required": true,
+          "_type": "String",
+          "_example": `styleConf: "./resources/style.json"`
+        },
+        "portalLanguage": {
+          "_description": "Einstellungen für die Mehrsprachigkeit der Portaloberfläche.",
+          "_required": false,
+          "_type": "Objekt",
+          "_properties": [
+            { "name": "enabled", "type": "Boolean", "required": true, "default": "true", "description": "Legt fest, ob eine Schaltfläche zum Umschalten der Portalsprache bereitgestellt wird." },
+            { "name": "languages", "type": "Object", "required": true, "description": "Sprachkürzel. Es müssen passende Sprachdateien vorhanden sein." },
+            { "name": "fallbackLanguage", "type": "String", "required": false, "default": '"de"', "description": "Ausweichsprache, die verwendet wird, wenn Inhalte in der aktuell ausgewählten Sprache nicht verfügbar sind." },
+            { "name": "changeLanguageOnStartWhen", "type": "String[]", "required": false, "default": '["querystring", "localStorage", "navigator", "htmlTag"]', "description": "Reihenfolge der Spracherkennung des Benutzers." }
+          ],
+          "_example": `portalLanguage: {
+    enabled: true,
+    languages: {
+        de: "Deutsch",
+        en: "English",
+        es: "Español"
+    },
+    fallbackLanguage: "de",
+    changeLanguageOnStartWhen: ["querystring", "localStorage", "htmlTag"]
+}`
+        },
+        "namedProjections": {
+          "_description": "Definition der verwendbaren Koordinatensysteme. Siehe Syntaxdefinition für Details.",
+          "_required": true,
+          "_type": "String[]",
+          "_example": `namedProjections: [
+    ["EPSG:25832", "+title=ETRS89/UTM 32N +proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"]
+]`
+        },
+        "alerting": {
+          "_description": "Überschreibt die Standardwerte des Alert-Moduls.",
+          "_properties": [
+            { "name": "fetchBroadcastUrl", "type": "String", "required": false, "default": "false", "description": "Das Alerting-Modul verwendet zunächst eine verknüpfte Konfigurationsdatei von dieser URL." }
+          ],
+          "_example": `alerting: {
+    fetchBroadcastUrl: "./resources/newsFeedPortalAlerts.json"
+}`
+        },
+        "cswId": {
+          "_description": "Referenz zu einer CSW-Schnittstelle, die zum Abrufen von Layer-Informationen verwendet wird. Die ID wird zu einem in der rest-services.json-Datei definierten Dienst aufgelöst.",
+          "_required": false,
+          "_type": "String", 
+          "_default": '"3"',
+          "_example": `cswId: "3"`
+        },
+        "wfsImgPath": {
+          "_description": "Pfad zum Ordner mit Bildern für die WFS-Stile. Der Pfad ist relativ zu js/main.js.",
+          "_required": false,
+          "_type": "String",
+          "_example": `wfsImgPath: "./resources/img/"`
+        }
+      },
+
+      // services.json documentation
+      "services.json": {
+        "_description": "Die services.json beschreibt alle verfügbaren Dienste (WMS, WFS, SensorThings-API usw.), die im Masterportal angezeigt werden können.",
+        "WMS": {
+          "_description": "Ein Layer basierend auf dem OGC Web Map Service (WMS) Standard oder WMS mit Zeitunterstützung (WMS-T).",
+          "_properties": [
+            { "name": "id", "type": "String", "required": true, "description": "Eindeutige ID des Layers." },
+            { "name": "name", "type": "String", "required": true, "description": "Anzeigename, der im Layerbaum verwendet wird." },
+            { "name": "url", "type": "String", "required": true, "description": "Service-URL" },
+            { "name": "typ", "type": "String", "required": true, "description": "Service-Typ; in diesem Fall 'WMS'." },
+            { "name": "layers", "type": "String", "required": true, "description": "Der Layer-Name des Services. Muss mit einem Namen aus den Service-Capabilities unter Layer/Layer/Name übereinstimmen." },
+            { "name": "format", "type": "String", "required": true, "description": "Bildformat der über GetMap angeforderten Kacheln. Muss einem der im Service aufgeführten Formate unter Capability/Request/GetMap/Format entsprechen." },
+            { "name": "version", "type": "String", "required": true, "description": "Die für GetMap-Anfragen verwendete Service-Version." },
+            { "name": "singleTile", "type": "Boolean", "required": false, "default": "false", "description": "true: Anfordern der Karte als eine einzelne Kachel der aktuellen Ansicht. false: Karte aus mehreren kleineren Kacheln erstellen." },
+            { "name": "transparent", "type": "Boolean", "required": true, "description": "Ob der Kachelhintergrund transparent sein soll. Entspricht dem GetMap-Parameter TRANSPARENT." },
+            { "name": "tilesize", "type": "String", "required": true, "description": "Kachelhöhe und -breite in Pixeln. Wird verwendet, wenn singleTile auf false gesetzt ist." }
+          ],
+          "_example": `{
+  "id": "8",
+  "name": "Aerial View DOP 10",
+  "url": "https://geodienste.hamburg.de/HH_WMS_DOP10",
+  "typ": "WMS",
+  "layers": "1",
+  "format": "image/jpeg",
+  "version": "1.3.0",
+  "singleTile": false,
+  "transparent": true,
+  "tilesize": "512",
+  "gutter": "0",
+  "minScale": "0",
+  "maxScale": "1000000",
+  "gfiAttributes": "ignore",
+  "layerAttribution": "nicht vorhanden",
+  "legend": false,
+  "crs": "EPSG:3857"
+}`
+        },
+        "WMTS": {
+          "_description": "Ein Layer basierend auf dem OGC Web Map Tile Service (WMTS) Standard.",
+          "_properties": [
+            { "name": "id", "type": "String", "required": true, "description": "Eindeutige ID des Layers." },
+            { "name": "name", "type": "String", "required": true, "description": "Anzeigename, der im Layerbaum verwendet wird." },
+            { "name": "urls", "type": "String[]", "required": true, "description": "WMTS-Service-URL. Wenn nur eine einzelne URL angegeben wird, wird sie intern in ein Array umgewandelt." },
+            { "name": "typ", "type": "String", "required": true, "description": "Service-Typ; in diesem Fall 'WMTS'." },
+            { "name": "layers", "type": "String", "required": true, "description": "Layer-Name. Muss mit dem in den WMTS-Capabilities angegebenen Namen übereinstimmen." },
+            { "name": "version", "type": "String", "required": true, "description": "Die für GetMap-Anfragen verwendete Service-Version." },
+            { "name": "format", "type": "String", "required": true, "description": "Bildformat der Layer-Kacheln." },
+            { "name": "tileMatrixSet", "type": "String", "required": true, "description": "Matrix-Set, das für den Aufruf des WMTS-Dienstes erforderlich ist." },
+            { "name": "coordinateSystem", "type": "enum[\"EPSG:4326\", \"EPSG:3857\"]", "required": true, "description": "Das Koordinatenreferenzsystem des Layers." }
+          ],
+          "_example": `{
+  "id": "2020",
+  "name": "EOC Basemap",
+  "capabilitiesUrl": "https://tiles.geoservice.dlr.de/service/wmts?SERVICE=WMTS&REQUEST=GetCapabilities",
+  "typ": "WMTS",
+  "layers": "eoc:basemap",
+  "optionsFromCapabilities": true
+}`
+        },
+        "WFS": {
+          "_description": "Ein Layer basierend auf dem OGC Web Feature Service (WFS) Standard.",
+          "_properties": [
+            { "name": "id", "type": "String", "required": true, "description": "Eindeutige ID des Layers." },
+            { "name": "name", "type": "String", "required": true, "description": "Anzeigename, der im Layerbaum verwendet wird." },
+            { "name": "url", "type": "String", "required": true, "description": "Service-URL" },
+            { "name": "typ", "type": "String", "required": true, "description": "Service-Typ; in diesem Fall 'WFS'." },
+            { "name": "featureType", "type": "String", "required": true, "description": "Zu ladender Feature-Typ. Muss mit einem Wert aus FeatureTypeList/FeatureType/Name in der GetCapabilities-Antwort übereinstimmen. Ohne Namespace angeben." },
+            { "name": "featureNS", "type": "String", "required": true, "description": "Normalerweise im WFS GetCapabilities-Header referenziert. Wird verwendet, um den in FeatureType/Name angegebenen Namespace aufzulösen." },
+            { "name": "version", "type": "String", "required": false, "description": "Die für GetFeature-Anfragen verwendete Service-Version." },
+            { "name": "gfiAttributes", "type": "String/Object", "required": true, "description": "Anzuzeigende GFI-Attribute." },
+            { "name": "styleId", "type": "String", "required": false, "description": "Referenz auf eine styleId in der style.json für die Darstellung der Features." }
+          ],
+          "_example": `{
+  "id": "44",
+  "name": "Traffic situation on freeways",
+  "url": "https://geodienste.hamburg.de/HH_WFS_Verkehr_opendata",
+  "typ": "WFS",
+  "featureType": "bab_vkl",
+  "format": "image/png",
+  "version": "1.1.0",
+  "featureNS": "http://www.deegree.org/app",
+  "gfiAttributes": "showAll",
+  "layerAttribution": "nicht vorhanden",
+  "legend": true
+}`
+        },
+        "SensorThings": {
+          "_description": "Ein Layer basierend auf dem OGC SensorThings API (STA) Standard.",
+          "_properties": [
+            { "name": "id", "type": "String", "required": true, "description": "Eindeutige ID des Layers." },
+            { "name": "name", "type": "String", "required": true, "description": "Anzeigename, der im Layerbaum verwendet wird." },
+            { "name": "url", "type": "String", "required": true, "description": "Service-URL" },
+            { "name": "typ", "type": "String", "required": true, "description": "Service-Typ; in diesem Fall 'SensorThings'." },
+            { "name": "version", "type": "String", "required": false, "default": "1.1", "description": "Die zum Anfordern von Daten verwendete Service-Version." },
+            { "name": "urlParameter", "type": "Object", "required": false, "description": "Spezifikation der Abfrageoptionen. Diese ändern die Anfrage an Sensordaten, z.B. mit 'filter' oder 'expand'." },
+            { "name": "mqttOptions", "type": "Object", "required": false, "description": "Konfiguration der MQTT-Websocket-Verbindung." },
+            { "name": "rotationUnit", "type": "String", "required": false, "description": "Definiert die Rotationseinheit für Features, z.B. 'degree'." }
+          ],
+          "_example": `{
+  "id": "999999",
+  "name": "Live - Charging locations",
+  "typ": "SensorThings",
+  "version": "1.0",
+  "url": "https://51.5.242.162/itsLGVhackathon",
+  "intersect": true,
+  "maxSpeedKmh": 36,
+  "maxScaleForHistoricalFeatures": 40000,
+  "factor": 20,
+  "enableContinuousRequest": true,
+  "urlParameter": {
+    "root": "Things",
+    "filter": "startswith(Things/name,'Charging')",
+    "expand": "Locations,Datastreams/Observations($orderby=phenomenonTime%20desc;$top=1)"
+  },
+  "epsg": "EPSG:4326",
+  "gfiTheme": "default",
+  "gfiAttributes": {
+    "phenomenonTime": "Letze Zustandsänderung",
+    "state": "Zustand",
+    "plug": "Stecker",
+    "type": "Typ"
+  }
+}`
+        }
+      },
+
+      // rest-services.json documentation
+      "rest-services.json": {
+        "_description": "Die rest-services.json definiert alle Webdienste, die nicht zu OGC-Diensten wie WMS und WFS gehören, d.h. alle Dienste, die nicht für die visuelle Darstellung von Daten angefordert werden.",
+        "Print": {
+          "_description": "Druckdienste für das Erstellen von PDF-Karten aus dem Masterportal.",
+          "_properties": [
+            { "name": "id", "type": "String", "required": true, "description": "Eindeutige ID des Dienstes in der rest-services.json." },
+            { "name": "name", "type": "String", "required": true, "description": "Name des Dienstes." },
+            { "name": "url", "type": "String", "required": true, "description": "Service-URL" },
+            { "name": "typ", "type": "String", "required": true, "description": "Service-Typ; in diesem Fall 'Print'." }
+          ],
+          "_example": `{
+  "id": "mapfish_internet",
+  "name": "MapFishPrintService",
+  "typ": "Print",
+  "url": "https://printbase.de/printfolder/"
+}`
+        },
+        "CSW": {
+          "_description": "Katalogdienste für Metadaten im CSW-Standard (Catalog Service for the Web).",
+          "_properties": [
+            { "name": "id", "type": "String", "required": true, "description": "Eindeutige ID des Dienstes in der rest-services.json." },
+            { "name": "name", "type": "String", "required": true, "description": "Name des Dienstes." },
+            { "name": "url", "type": "String", "required": true, "description": "Service-URL" },
+            { "name": "typ", "type": "String", "required": true, "description": "Service-Typ; in diesem Fall 'CSW'." }
+          ],
+          "_example": `{
+  "id": "1",
+  "name": "CSW HMDK Summary",
+  "url": "http://metaver.de/csw?service=CSW&version=2.0.2&request=GetRecordById&typeNames=csw:Record&elementsetname=summary",
+  "typ": "CSW"
+}`
+        },
+        "URL": {
+          "_description": "Einfache URL-Dienste, die für verschiedene Zwecke verwendet werden.",
+          "_properties": [
+            { "name": "id", "type": "String", "required": true, "description": "Eindeutige ID des Dienstes in der rest-services.json." },
+            { "name": "name", "type": "String", "required": true, "description": "Name des Dienstes." },
+            { "name": "url", "type": "String", "required": true, "description": "Service-URL" },
+            { "name": "typ", "type": "String", "required": true, "description": "Service-Typ; in diesem Fall 'URL'." }
+          ],
+          "_example": `{
+  "id": "2",
+  "name": "Metadata URL",
+  "url": "http://metaver.de/trefferanzeige?docuuid=",
+  "typ": "URL"
+}`
+        }
+      },
+
+      // style.json documentation
+      "style.json": {
+        "_description": "Die style.json-Datei beschreibt Visualisierungsregeln zur Steuerung der Darstellung von Vektorfeatures. Sie kann für alle Arten von Vektorlayern verwendet werden: WFS, GeoJSON und Sensor.",
+        "styleId": {
+          "_description": "Die styleId ist ein eindeutiger Bezeichner für einen Stil, der in der style.json definiert ist. Layer referenzieren diese ID, um den Stil anzuwenden.",
+          "_properties": [
+            { "name": "styleId", "type": "String", "required": true, "description": "Eindeutige ID des Stils." },
+            { "name": "rules", "type": "Array", "required": true, "description": "Ein Array von Regeln, die definieren, wie Features dargestellt werden sollen." }
+          ],
+          "_example": `{
+  "styleId": "1711",
+  "rules": [
+    {
+      "conditions": {
+        "properties": {
+          "@Datastreams.1.Observations.0.result": [1, 3]
+        }
+      },
+      "style": {
+        "type": "circle",
+        "circleFillColor": [255, 0, 0, 1],
+        "clusterType": "circle"
+      }
+    }
+  ]
+}`
+        },
+        "rules": {
+          "_description": "Die rules definieren, wie Features dargestellt werden sollen, basierend auf ihren Eigenschaften.",
+          "_properties": [
+            { "name": "conditions", "type": "Object", "required": false, "description": "Bedingungen, die erfüllt sein müssen, damit der Stil auf ein Feature angewendet wird." },
+            { "name": "style", "type": "Object", "required": true, "description": "Die Darstellungsanweisungen, die angewendet werden, wenn die Bedingungen erfüllt sind." }
+          ],
+          "_example": `{
+  "conditions": {
+    "properties": {
+      "kapitelbezeichnung": "Grundschulen"
+    }
+  },
+  "style": {
+    "type": "icon",
+    "imageName": "grundschulen.svg",
+    "imageWidth": 40,
+    "imageHeight": 40,
+    "imageScale": 0.6
+  }
+}`
+        },
+        "conditions": {
+          "_description": "Die conditions definieren Bedingungen, die erfüllt sein müssen, damit ein Stil auf ein Feature angewendet wird.",
+          "properties": {
+            "_description": "Mit properties wird eine Überprüfung der Feature-Eigenschaften aktiviert, indem die notierten Werte mit den tatsächlichen Feature-Eigenschaften verglichen werden.",
+            "_example": `"properties": {
+  "key": "value",
+  "key2": "value2"
+}`
+          },
+          "sequence": {
+            "_description": "Das Attribut sequence steuert eine indexikale Prüfung für MultiGeometry-Features. Es ist nur für diese Geometrietypen relevant: MultiPoint, MultiLinestring, MultiPolygon, GeometryCollection.",
+            "_example": `"sequence": [1, 2]`
+          }
+        },
+        "style": {
+          "_description": "Die Darstellungsregeln für Features, abhängig vom GeometryType eines Features.",
+          "Point": {
+            "_description": "Die Darstellungsregeln für Punkte sind in einfache Punktgeometrien und geclusterte Punkte unterteilt.",
+            "_properties": [
+              { "name": "type", "type": "String", "required": false, "default": "circle", "description": "Typ der Darstellung; einer von [icon, circle, nominal, interval]." },
+              { "name": "imageName", "type": "String", "required": false, "default": "blank.png", "description": "Bildname: kann den Icon-Namen oder einen relativen Pfad zu config.js wfsImgPath, einen vollständigen Pfad oder eine SVG enthalten." },
+              { "name": "imageWidth", "type": "String", "required": false, "default": "1", "description": "Bildbreite" },
+              { "name": "imageHeight", "type": "String", "required": false, "default": "1", "description": "Bildhöhe" },
+              { "name": "imageScale", "type": "String", "required": false, "default": "1", "description": "Bildskalierung" }
+            ],
+            "_example": `"style": {
+  "type": "icon",
+  "imageName": "hospital.png",
+  "imageWidth": 40,
+  "imageHeight": 40,
+  "imageScale": 0.6
+}`
+          },
+          "LineString": {
+            "_description": "Darstellungsregeln für Linien.",
+            "_properties": [
+              { "name": "lineStrokeColor", "type": "Integer[]", "required": false, "default": "[255, 0, 0, 1]", "description": "Linienfarbe in rgba" },
+              { "name": "lineStrokeWidth", "type": "Integer", "required": false, "default": "5", "description": "Linienbreite" },
+              { "name": "lineStrokeCap", "type": "String", "required": false, "default": "round", "description": "Linienkappenstil" },
+              { "name": "lineStrokeJoin", "type": "String", "required": false, "default": "round", "description": "Linienverbindungsstil" }
+            ],
+            "_example": `"style": {
+  "lineStrokeColor": [255, 0, 0, 1],
+  "lineStrokeWidth": 5
+}`
+          },
+          "Polygon": {
+            "_description": "Darstellungsregeln für Polygone.",
+            "_properties": [
+              { "name": "polygonStrokeColor", "type": "Integer[]", "required": false, "default": "[0, 0, 0, 1]", "description": "Linienfarbe in rgba" },
+              { "name": "polygonStrokeWidth", "type": "Integer", "required": false, "default": "1", "description": "Linienbreite" },
+              { "name": "polygonFillColor", "type": "Integer[]", "required": false, "default": "[10, 200, 100, 0.5]", "description": "Füllfarbe in rgba" },
+              { "name": "polygonFillHatch", "type": "Object", "required": false, "description": "Kann verwendet werden, um ein Schraffurmuster zu definieren. Schließt sich gegenseitig mit polygonFillColor aus." }
+            ],
+            "_example": `"style": {
+  "polygonStrokeColor": [0, 0, 0, 1],
+  "polygonStrokeWidth": 1,
+  "polygonFillColor": [10, 200, 0, 0.2]
+}`
+          },
+          "Text": {
+            "_description": "Alle genannten Geometrietypen können eine Textannotation erhalten.",
+            "_properties": [
+              { "name": "labelField", "type": "String", "required": true, "description": "Zu verwendendes Feature-Attribut als Beschriftung." },
+              { "name": "textAlign", "type": "String", "required": false, "default": "center", "description": "Textausrichtung" },
+              { "name": "textFont", "type": "String", "required": false, "default": "Comic Sans MS", "description": "Textschriftart" },
+              { "name": "textScale", "type": "Integer", "required": false, "default": "2", "description": "Textskalierung" }
+            ],
+            "_example": `"style": {
+  "labelField": "name",
+  "textAlign": "center",
+  "textFont": "Arial",
+  "textScale": 2
+}`
+          }
+        }
+      }
+    };
+    
+    // Current active configuration
+    let currentConfig = "config.json";
+    
+    // Function to format JSON examples with syntax highlighting
+    function formatJsonExample(example) {
+      return example
+        .replace(/(["'])(.*?)\1\s*:/g, '<span class="json-key">$1$2$1</span>:') // keys
+        .replace(/(["'])(.*?)\1(?!:)/g, '<span class="json-string">$1$2$1</span>') // strings
+        .replace(/\b(true|false)\b/g, '<span class="json-boolean">$1</span>') // booleans
+        .replace(/\b(\d+)\b/g, '<span class="json-number">$1</span>'); // numbers
+    }
+    
+    // Function to build tree view of configuration
+    function buildConfigTree(config, path = "", isSearching = false, searchTerm = "") {
+      let html = '<ul class="space-y-1">';
+      
+      for (const key in config) {
+        if (key.startsWith("_")) continue; // Skip documentation keys
+        
+        const newPath = path ? `${path}.${key}` : key;
+        const hasChildren = Object.keys(config[key]).some(k => !k.startsWith("_"));
+        
+        // Skip items that don't match search if we're searching
+        if (isSearching && !newPath.toLowerCase().includes(searchTerm) && 
+            !(config[key]._description && config[key]._description.toLowerCase().includes(searchTerm))) {
+          if (!hasChildren || !hasMatchingChildren(config[key], searchTerm)) {
+            continue;
+          }
+        }
+        
+        if (hasChildren) {
+          const isExpanded = isSearching; // Auto-expand nodes during search
+          
+          html += `
+            <li>
+              <div class="flex items-center gap-1 p-2 rounded cursor-pointer hover:bg-gray-100" 
+                   onclick="toggleNode('${newPath}'); showHelp('${newPath}')">
+                <i id="icon-${newPath}" class="bi ${isExpanded ? 'bi-chevron-down' : 'bi-chevron-right'}"></i>
+                <span class="font-medium">${key}</span>
+              </div>
+              <div id="node-${newPath}" class="pl-6 ${isExpanded ? '' : 'hidden'}">
+                ${buildConfigTree(config[key], newPath, isSearching, searchTerm)}
+              </div>
+            </li>
+          `;
+        } else {
+          html += `
+            <li>
+              <div class="flex items-center gap-1 p-2 rounded cursor-pointer hover:bg-gray-100 pl-5" 
+                   onclick="showHelp('${newPath}')">
+                <span>${key}</span>
+              </div>
+            </li>
+          `;
+        }
+      }
+      
+      html += '</ul>';
+      return html;
+    }
+    
+    // Helper function to check if any children match the search term
+    function hasMatchingChildren(config, searchTerm) {
+      for (const key in config) {
+        if (key.startsWith("_")) continue;
+        
+        if (key.toLowerCase().includes(searchTerm) || 
+            (config[key]._description && config[key]._description.toLowerCase().includes(searchTerm))) {
+          return true;
+        }
+        
+        if (typeof config[key] === 'object' && hasMatchingChildren(config[key], searchTerm)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    
+    // Function to toggle tree nodes
+    function toggleNode(path) {
+      const node = document.getElementById(`node-${path}`);
+      const icon = document.getElementById(`icon-${path}`);
+      
+      if (node.classList.contains("hidden")) {
+        node.classList.remove("hidden");
+        icon.classList.remove("bi-chevron-right");
+        icon.classList.add("bi-chevron-down");
+      } else {
+        node.classList.add("hidden");
+        icon.classList.remove("bi-chevron-down");
+        icon.classList.add("bi-chevron-right");
+      }
+    }
+    
+    // Function to show help for a configuration item
+    function showHelp(path) {
+      const pathParts = path.split(".");
+      let configItem = configDocs[currentConfig];
+      
+      // Navigate to the specified item
+      for (const part of pathParts) {
+        if (configItem && configItem[part]) {
+          configItem = configItem[part];
+        } else {
+          // Item not found
+          document.getElementById("config-help").innerHTML = `
+            <div class="p-4 bg-yellow-100 text-yellow-700 rounded">
+              <p>Dokumentation für "${path}" nicht verfügbar</p>
+            </div>
+          `;
+          return;
+        }
+      }
+      
+      // Build the help content
+      let helpContent = `
+        <h3 class="text-xl font-medium mb-3">${pathParts[pathParts.length - 1]}</h3>
+      `;
+      
+      if (configItem["_description"]) {
+        helpContent += `
+          <div class="mb-4">
+            <p class="text-gray-700">${configItem["_description"]}</p>
+          </div>
+        `;
+      }
+      
+      // Add type, required, and default info if available
+      if (configItem["_type"] || configItem["_required"] !== undefined) {
+        helpContent += `<div class="mb-4">`;
+        
+        if (configItem["_type"]) {
+          helpContent += `<div class="text-gray-600"><strong>Typ:</strong> ${configItem["_type"]}</div>`;
+        }
+        
+        if (configItem["_required"] !== undefined) {
+          helpContent += `<div class="text-gray-600"><strong>Erforderlich:</strong> ${configItem["_required"] ? "Ja" : "Nein"}</div>`;
+        }
+        
+        if (configItem["_default"]) {
+          helpContent += `<div class="text-gray-600"><strong>Standard:</strong> ${configItem["_default"]}</div>`;
+        }
+        
+        helpContent += `</div>`;
+      }
+      
+      // Add properties table if available
+      if (configItem["_properties"] && configItem["_properties"].length > 0) {
+        helpContent += `
+          <div class="mb-4">
+            <h4 class="font-medium mb-2">Eigenschaften</h4>
+            <div class="overflow-x-auto">
+              <table class="min-w-full border border-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b">Name</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b">Typ</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b">Erforderlich</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b">Standard</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b">Beschreibung</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+        `;
+        
+        configItem["_properties"].forEach(prop => {
+          helpContent += `
+            <tr>
+              <td class="px-4 py-2 text-sm">${prop.name}</td>
+              <td class="px-4 py-2 text-sm">${prop.type || ""}</td>
+              <td class="px-4 py-2 text-sm">${prop.required ? "Ja" : "Nein"}</td>
+              <td class="px-4 py-2 text-sm">${prop.default || ""}</td>
+              <td class="px-4 py-2 text-sm">${prop.description || ""}</td>
+            </tr>
+          `;
+        });
+        
+        helpContent += `
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Add example if available
+      if (configItem["_example"]) {
+        helpContent += `
+          <div class="mb-4">
+            <h4 class="font-medium mb-2">Beispiel</h4>
+            <pre class="bg-gray-50 p-3 rounded text-sm overflow-x-auto">${formatJsonExample(configItem["_example"])}</pre>
+          </div>
+        `;
+      }
+      
+      document.getElementById("config-help").innerHTML = helpContent;
+    }
+    
+    // Function to switch between config files
+    function switchConfig(configType) {
+      currentConfig = configType;
+      
+      // Update UI
+      document.getElementById("config-type-header").textContent = `${configType} Struktur`;
+      
+      // Update button styles
+      document.querySelectorAll(".tabs button").forEach(btn => {
+        const isActive = btn.id.includes(configType.toLowerCase().replace(/\./g, "-"));
+        btn.classList.toggle("tab-active", isActive);
+        btn.classList.toggle("tab-inactive", !isActive);
+      });
+      
+      // Build tree view
+      document.getElementById("config-tree").innerHTML = buildConfigTree(configDocs[configType]);
+      
+      // Reset help panel
+      document.getElementById("config-help").innerHTML = `
+        <p class="text-gray-500 text-center py-10">Klicken Sie auf ein Konfigurationselement, um die Dokumentation anzuzeigen</p>
+      `;
+      
+      // Clear search
+      document.getElementById("search-input").value = "";
+    }
+    
+    // Function to handle search
+    function handleSearch() {
+      const searchTerm = document.getElementById("search-input").value.toLowerCase();
+      
+      if (searchTerm.length < 2) {
+        // If search is cleared or too short, show normal tree
+        document.getElementById("config-tree").innerHTML = buildConfigTree(configDocs[currentConfig]);
+        return;
+      }
+      
+      // Build filtered tree
+      document.getElementById("config-tree").innerHTML = buildConfigTree(
+        configDocs[currentConfig], 
+        "", 
+        true, 
+        searchTerm
+      );
+    }
+    
+    // Set up event listeners
+    document.getElementById("show-config-json").addEventListener("click", () => switchConfig("config.json"));
+    document.getElementById("show-config-js").addEventListener("click", () => switchConfig("config.js"));
+    document.getElementById("show-services-json").addEventListener("click", () => switchConfig("services.json"));
+    document.getElementById("show-rest-services-json").addEventListener("click", () => switchConfig("rest-services.json"));
+    document.getElementById("show-style-json").addEventListener("click", () => switchConfig("style.json"));
+    document.getElementById("search-input").addEventListener("input", handleSearch);
+    
+    // Initialize the app
+    document.addEventListener("DOMContentLoaded", () => {
+      // Make config.json active initially
+      switchConfig("config.json");
+    });
+  </script>
+</body>
+</html>
